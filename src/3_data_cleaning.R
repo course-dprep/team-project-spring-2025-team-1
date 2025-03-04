@@ -132,9 +132,6 @@ summary(TV_series_data_clean)
 #   versus 8, this might influence how we choose to plot or visually represent them)
 
 
-## find all the columns we  have in the first place
-columns = colnames(TV_series_data_clean)
-
 
 ## create 3 empty dataframes. the first one stores whether a vector is a character or numeric. then based on this 
 data_types_summary = data.frame(variable = character(), type = character(), 
@@ -154,7 +151,7 @@ getmode <- function(v) {
    uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
-## Create a function whether a variable is binary 
+## Create a function whether a variable is binary (either true or false)
 
 binary_check = function(v) {
   if (all(v %in% c(0, 1))) {
@@ -199,11 +196,20 @@ for (col in columns) {
   
 }
 
+### create a figure with variable type, datatype and percentage na
+kable(data_types_summary, 
+      col.names = c("Variable name", "type", "percentage na"), 
+      caption = "Fig2: Overview of all variables in merged dataframe")
 
-kable(data_types_summary, caption = "Data Types Summary")
-kable(data_types_numeric, caption = "Data Types Summary: Numeric Only")
-kable(data_types_char, caption = "Data Types Summary: only Characters")
-```
+### create a figure with an overview of all numeric figures
+kable(data_types_numeric, 
+      col.names = c("variable name", "lowest value", "highest value", "average (mean)", "average (median)", "average (mode)", "is binary?"),
+      caption = "Fig3: Data Types Summary: Numeric Only")
+
+### create a figure for character variable with numer of unique values
+kable(data_types_char, 
+      col.names = c("variable name", "number unique values"),
+      caption = "Fig4: Data Types Summary: only Characters")
 
 ## variable inspection and subsequent course correction
 
@@ -250,7 +256,7 @@ TV_series_data_clean = TV_series_data_clean %>%
 
 ggplot(data_types_summary, aes(x = reorder(variable, -percentage_na), y = percentage_na)) +
   geom_bar(stat = "identity") + 
-  labs(title = "NA vs Non-NA Values for All Columns",
+  labs(title = "Fig5: Percentage of missing values per column",
        x = "Type variable",
        y = "Percentage of na values") +
   theme_minimal() +
@@ -291,7 +297,6 @@ TV_series_data_clean <- TV_series_data_clean %>%
 
 ### values which in the summary had more than one percent NA's
 target_columns = data_types_summary$variable[which(data_types_summary$percentage_na > 1)]
-
 ## TAKE out already removed columns
 
 columns = colnames(TV_series_data_clean)
@@ -300,17 +305,16 @@ target_columns <- target_columns[target_columns %in% columns]
 
 ## As we have already filtered startyear (and discarded NA variables in this category) we will not be analysing it for this part
 
-target_columns <- target_columns[target_columns != "startYear"]
-
-target_columns <- target_columns[target_columns != "title"]
+target_columns <- setdiff(target_columns, c("startYear", "title", "Genre1_encoded_encoded", "Genre2_encoded_encoded", "Genre3_encoded_encoded"))
 
 
+start_number = 6
 
 for (col in target_columns) {
   print(
     ggplot(TV_series_data_clean, aes(x = as.factor(Renewed), fill = as.factor(is.na(.data[[col]])))) +
       geom_bar(position = "dodge") +  
-      labs(title = paste("Comparison of NA vs. Non-NA in", col, "and TV Show Renewal"),
+      labs(title = paste("Fig", start_number, ": Comparison of Missing values in", col, "based on Renewal Status"),
            x = "Renewal Status",
            y = "Count",
            fill = "Category") +
@@ -318,6 +322,8 @@ for (col in target_columns) {
                         labels = c(paste(col, "Data Available"), paste(col, "Data Missing"))) +
       theme_minimal()
   )
+  
+  start_number = start_number + 1
 }
 
 
@@ -361,7 +367,9 @@ for (col in target_columns) {
 }
 
 # Print final dataframe
-kable(na_summary_df, caption = "Summary of percentage of missing variables in Total and Renewal Conditions")
+kable(na_summary_df, 
+      col.names = c("variabe name", "na % total", "na % in renewals", "na % in non renewals"),
+      caption = "Fig 12: Summary of percentage of missing variables in Total and Renewal Conditions")
 
 
 
@@ -405,3 +413,5 @@ TV_series_data_clean = TV_series_data_clean %>%
   filter(!is.na(averageRating) & !is.na(numVotes))
 
 head(TV_series_data_clean)
+
+rm(TV_series_data_genre)

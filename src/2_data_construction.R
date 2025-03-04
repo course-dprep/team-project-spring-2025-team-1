@@ -1,3 +1,6 @@
+# Step 2: data construction
+
+#2.1 merge the datasets
 
 # Merge episode_data with title.basics, title.akas, and title.ratings
 TV_series_data <- episode_data %>%
@@ -5,27 +8,22 @@ TV_series_data <- episode_data %>%
   left_join(akas_data, by = c("parentTconst" = "titleId")) %>%
   left_join(ratings_data, by = c("parentTconst" = "tconst"))
 
-# Check the result
-glimpse(TV_series_data)
+#2.2 Filter out everything that is not a TV series
 
-
-table(TV_series_data$titleType)
-
-# see that there is also tvMiniSeries, we don't want to include them as TV Mini Series are usually meant to only last a season, and don't get renewed.
-
+# EXPLANATION: 
+# since our focus is tv-series, we are filtering the titletype on this (tvseries).
+# we also see that there is also tvMiniSeries, we don't want to include them as TV Mini Series are usually meant to only last a season, and don't get renewed.
 
 # Only keep TV_series_data
 TV_series_data <- TV_series_data %>%
   filter(titleType == "tvSeries")
 
-# check unique nr of parentTconst in episode_data and TV_series_data
+#2.3 create renewal variable
 
-print(length(unique(episode_data$parentTconst)))   # 215686
-print(length(unique(TV_series_data$parentTconst))) # 179223
-
-
-# only keep one row per parentTconst, and only keep the row with the highest seasonNumber of that parentTconst
-
+# In our datasets, certain rows have the same identifier (parenttconst),
+# this makes sense as season 1 of a show and season 2 have the same identifier
+# therefore we want to only keep the rows with the highest season number (this will be 
+# useful in the next step, when we need to check whether a show was renewed or not. 
 
 # Select the row with the highest seasonNumber for each parentTconst
 TV_series_data <- TV_series_data %>%
@@ -33,14 +31,7 @@ TV_series_data <- TV_series_data %>%
   slice_max(seasonNumber, with_ties = FALSE) %>%
   ungroup()
 
-
-head(TV_series_data)
-
-print(nrow(TV_series_data)) # should be 179223
-
-
-
-
+# We now create the variable renewed, we can do this based on whether a tv show has only 1 or multiple seasons
 
 TV_series_data <- TV_series_data %>%
   # Create the Renewed variable based on the season number being above or equal to 2
@@ -48,10 +39,11 @@ TV_series_data <- TV_series_data %>%
   # Ungroup to return to a standard data frame
   ungroup()
 
-# Check the result
-head(TV_series_data)
-table(TV_series_data$Renewed)
+# 2.4 create a multi-value column for genre so that we can analyse them later on
 
+# Split the multi_values column into three separate columns
+TV_series_data_genre <- TV_series_data %>%
+  separate(genres, into = c("Genre1", "Genre2", "Genre3"), sep = ",", fill = "right")
 
 # Get all unique categories across the selected columns
 all_genres <- unique(unlist(TV_series_data_genre))
@@ -82,6 +74,12 @@ factor_mapping <- sapply(TV_series_data_genre[, c("Genre1", "Genre1_encoded")], 
 
 print(factor_mapping)
 
-# to test wheter this is not an error, we check the original dataset where this variable was in to see if there are any values in the language column
-# as can be seen below, this is the case
-table(TV_series_data_genre$language)
+#2.5 remove datasets that are not being used
+rm(raw_data_info)
+rm(akas_data)
+rm(basics_data)
+rm(episode_data)
+rm(ratings_data)
+rm(TV_series_data)
+
+

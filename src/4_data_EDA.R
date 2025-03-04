@@ -9,7 +9,9 @@
 #or the barplot depending on what type of variable we are dealing with
 
 ## these are all our numeric variables
-remaining_columns_sans_genre = c("isAdult", "startYear", "endYear", "averageRating", "numVotes", "Renewed")
+remaining_columns_sans_genre = c("isAdult", "startYear", "endYear", "averageRating", "numVotes")
+fig_number = 13
+
 
 for (col in remaining_columns_sans_genre) {
   ## IF the factor was previously identified as numeric
@@ -22,14 +24,16 @@ for (col in remaining_columns_sans_genre) {
     
     if (binary == 0) {
       
-      boxplot(TV_series_data_clean[[col]], main = paste("Boxplot of", col), ylab = col)
+      boxplot(TV_series_data_clean[[col]], main = paste("Fig", fig_number, ": Boxplot of", col), ylab = col)
       
     } else {
       
-      barplot(table(TV_series_data_clean[[col]]), main = paste("Barplot of", col), xlab = col, ylab = "Count", col = c("red", "green"))
+      barplot(table(TV_series_data_clean[[col]]), main = paste("Fig", fig_number, ": Barplot of", col), xlab = col, ylab = "Count", col = c("red", "green"))
       
     }
   }
+  
+  fig_number = fig_number +1
   
 }
 
@@ -71,7 +75,21 @@ kable(genre_counts, caption = "Frequency of Genres occurences in our dataset")
 
 ggplot(genre_counts, aes(x = reorder(Genre, -n), y = n, fill = Genre)) +
   geom_bar(stat = "identity") +
-  labs(title = "TV Genre Distribution", x = "Genres", y = "Count") +
+  labs(title = "Fig 18: TV Genre Distribution", x = "Genres", y = "Count") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   guides(fill = "none") 
+
+
+# Count occurrences of each genre
+genre_counts <- TV_series_data_clean %>%
+  select(Genre1, Genre2, Genre3) %>%
+  pivot_longer(everything(), names_to = "Genre_Type", values_to = "Genre") %>%
+  drop_na() %>%
+  count(Genre, sort = TRUE) %>%
+  mutate(percentage = (n / sum(n)) * 100)
+
+# Display the result
+kable(genre_counts, 
+      col.names = c("Genre", "number of times observed", "percentage"),
+      caption = "Fig19: Frequency of Genre Occurrences in Dataset")
